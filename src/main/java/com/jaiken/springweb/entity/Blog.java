@@ -54,4 +54,7 @@ public class Blog {
      */
     @TableField("status")
     private Byte status;
+
+    @TableField(exist = false)
+    private String author;
 }

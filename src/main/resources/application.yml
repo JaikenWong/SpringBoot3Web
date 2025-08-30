@@ -19,7 +19,7 @@ spring:
         leak-detection-threshold: 60000
   devtools:
     restart:
-      enabled: true
+      enabled: false
       additional-paths: src/main/java
       exclude: static/**
   data:
@@ -47,5 +47,5 @@ mybatis-plus:
 
 # JWT 配置
 jwt:
-  expiration: 3600  # Token 过期时间，单位秒（1小时）
+  expiration: 3600000  # Token 过期时间，单位秒（1000小时）
   secret: "0123456789"

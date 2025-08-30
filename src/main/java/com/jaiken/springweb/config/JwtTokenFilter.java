@@ -79,6 +79,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
     private void writeErrorResponse(HttpServletResponse response, int code, String message) throws IOException {
         response.setContentType("application/json;charset=utf-8");
-        response.getWriter().write("{\"code\":" + code + ",\"msg\":\"" + message + "\"}");
+        response.getWriter().write("{\"msg\":\"" + message + "\"}");
+        response.setStatus(code);
     }
 }

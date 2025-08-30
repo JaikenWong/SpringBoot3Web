@@ -17,7 +17,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.jaiken.springweb.annotation.OperationLog;
 import com.jaiken.springweb.dto.Result;
 import com.jaiken.springweb.entity.Blog;
+import com.jaiken.springweb.entity.User;
 import com.jaiken.springweb.service.BlogService;
+import com.jaiken.springweb.service.UserService;
 import com.jaiken.springweb.util.TokenUtil;
 
 import cn.hutool.core.bean.BeanUtil;
@@ -25,19 +27,23 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 
 /**
+ * 博客管理
+ * 
  * @author JaikenWong
  * @since 2025-08-30 13:44
  **/
 @Slf4j
 @RestController
-@RequestMapping("/api/blog")
+@RequestMapping("/api/blogs")
 public class BlogController {
     @Autowired
     private BlogService blogService;
     @Autowired
+    private UserService userService;
+    @Autowired
     private TokenUtil tokenUtil;
 
-    @GetMapping("/")
+    @GetMapping("/list")
     @OperationLog(module = "博客管理", operation = "获取博客列表", description = "获取博客列表")
     public Result blogs(Integer currentPage) {
         if (currentPage == null || currentPage < 1)
@@ -51,6 +57,9 @@ public class BlogController {
     @OperationLog(module = "博客管理", operation = "获取博客详情", description = "获取博客详情")
     public Result detail(@PathVariable(name = "id") Long id) {
         Blog blog = blogService.getById(id);
+        Long userId = blog.getUserId();
+        User user = userService.getById(userId);
+        blog.setAuthor(user.getUsername());
         return Result.succ(blog);
     }
 

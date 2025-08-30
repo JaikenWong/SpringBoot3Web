@@ -1,14 +1,9 @@
 package com.jaiken.springweb.aop;
 
-import cn.hutool.core.util.ObjectUtil;
-import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSONUtil;
-import com.jaiken.springweb.annotation.OperationLog;
-import com.jaiken.springweb.entity.OperationLogEntity;
-import com.jaiken.springweb.mapper.OperationLogMapper;
-import com.jaiken.springweb.util.TokenUtil;
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.slf4j.Slf4j;
+import java.lang.reflect.Method;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -20,9 +15,15 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import java.lang.reflect.Method;
-import java.time.LocalDateTime;
-import java.util.Arrays;
+import com.jaiken.springweb.annotation.OperationLog;
+import com.jaiken.springweb.dto.Result;
+import com.jaiken.springweb.entity.OperationLogEntity;
+import com.jaiken.springweb.mapper.OperationLogMapper;
+
+import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.StrUtil;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 操作日志切面处理类
@@ -31,10 +32,10 @@ import java.util.Arrays;
 @Aspect
 @Component
 public class OperationLogAspect {
-    
+
     @Autowired
     private OperationLogMapper operationLogMapper;
-    
+
     /**
      * 环绕通知处理操作日志
      * 
@@ -46,20 +47,20 @@ public class OperationLogAspect {
     public Object recordLog(ProceedingJoinPoint joinPoint) throws Throwable {
         // 创建操作日志对象
         OperationLogEntity operationLog = new OperationLogEntity();
-        
+
         // 获取注解信息
-        MethodSignature signature = (MethodSignature) joinPoint.getSignature();
+        MethodSignature signature = (MethodSignature)joinPoint.getSignature();
         Method method = signature.getMethod();
         OperationLog operationLogAnnotation = method.getAnnotation(OperationLog.class);
-        
+
         // 设置基本信息
         operationLog.setModule(operationLogAnnotation.module());
         operationLog.setOperation(operationLogAnnotation.operation());
         operationLog.setDescription(operationLogAnnotation.description());
         operationLog.setOperationTime(LocalDateTime.now());
-        
+
         // 获取请求相关信息
-        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        ServletRequestAttributes attributes = (ServletRequestAttributes)RequestContextHolder.getRequestAttributes();
         HttpServletRequest request = attributes.getRequest();
         operationLog.setRequestUrl(request.getRequestURL().toString());
         operationLog.setRequestMethod(request.getMethod());
@@ -74,16 +75,21 @@ public class OperationLogAspect {
 
         // 获取操作用户
         operationLog.setOperator(getCurrentUsername());
-        
+
         Object result;
         long startTime = System.currentTimeMillis();
-        
+
         try {
             // 执行目标方法
             result = joinPoint.proceed();
-            
-            // 记录执行成功
-            operationLog.setResultStatus(1);
+            if (result instanceof Result) {
+                Result finalResult = (Result)result;
+                operationLog.setResultStatus(StrUtil.equals(finalResult.getCode(), "0") ? 1 : 0);
+                operationLog.setErrorMessage(finalResult.getMsg());
+            } else {
+                // 记录执行成功
+                operationLog.setResultStatus(1);
+            }
             return result;
         } catch (Exception e) {
             // 记录执行失败
@@ -94,25 +100,19 @@ public class OperationLogAspect {
             // 计算执行时间
             long endTime = System.currentTimeMillis();
             operationLog.setExecutionTime(endTime - startTime);
-            
             // 保存操作日志
             try {
                 operationLogMapper.insert(operationLog);
             } catch (Exception e) {
                 log.error("保存操作日志失败", e);
             }
-            
             // 打印操作日志到控制台
-            log.info("操作日志: 模块={}, 操作={}, 说明={}, 用户={}, 耗时={}ms, 结果={}",
-                    operationLog.getModule(),
-                    operationLog.getOperation(),
-                    operationLog.getDescription(),
-                    operationLog.getOperator(),
-                    operationLog.getExecutionTime(),
-                    operationLog.getResultStatus() == 1 ? "成功" : "失败");
+            log.info("操作日志: 模块={}, 操作={}, 说明={}, 用户={}, 耗时={}ms, 结果={}", operationLog.getModule(),
+                operationLog.getOperation(), operationLog.getDescription(), operationLog.getOperator(),
+                operationLog.getExecutionTime(), operationLog.getResultStatus() == 1 ? "成功" : "失败");
         }
     }
-    
+
     /**
      * 获取客户端IP地址
      * 
@@ -132,7 +132,7 @@ public class OperationLogAspect {
         }
         return ip;
     }
-    
+
     /**
      * 获取当前操作用户
      * 

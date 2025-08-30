@@ -1,5 +1,6 @@
 package com.jaiken.springweb.controller;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,9 +39,6 @@ public class LoginController {
     @Autowired
     private TokenUtil tokenUtil;
 
-    @Value("${jwt.expiration:3600}")
-    private Long expiration;
-
     @PostMapping("/login")
     @OperationLog(module = "用户管理", operation = "用户登录", description = "用户登录系统")
     public Result login(@RequestBody LoginRequest loginRequest) {
@@ -56,9 +54,11 @@ public class LoginController {
             Map<String, Object> payload = new HashMap<>();
             payload.put("id", principal.getId());
             payload.put("username", principal.getUsername());
+            payload.put("login_time", LocalDateTime.now());
             String token = tokenUtil.createToken(payload);
             Map<String, Object> response = new HashMap<>();
             response.put("token", token);
+            response.put("userInfo", principal);
             // 返回成功响应
             return Result.succ("登录成功", response);
         } catch (Exception e) {
