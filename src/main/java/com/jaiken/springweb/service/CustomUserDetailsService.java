@@ -1,6 +1,7 @@
 package com.jaiken.springweb.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.jaiken.springweb.dto.UserDto;
 import com.jaiken.springweb.entity.Role;
 import com.jaiken.springweb.entity.User;
 import com.jaiken.springweb.mapper.RoleMapper;
@@ -23,7 +24,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Autowired
     private UserMapper userMapper;
-    
+
     @Autowired
     private RoleMapper roleMapper;
 
@@ -39,15 +40,18 @@ public class CustomUserDetailsService implements UserDetailsService {
         List<Role> roles = roleMapper.selectRoleByUserName(username);
         // 转换角色为权限
         List<GrantedAuthority> authorities = roles.stream()
-                .map(role -> {
-                    return new SimpleGrantedAuthority(role.getName());
-                })
+                .map(role -> new SimpleGrantedAuthority(role.getName()))
                 .collect(Collectors.toList());
         // 创建UserDetails对象
-        return org.springframework.security.core.userdetails.User.builder()
+        return UserDto.builder()
+                .id(user.getId())
                 .username(user.getUsername())
-                .password(user.getPassword())
+                .password(user.getPassword())  // 添加密码信息
                 .authorities(authorities)
+                .accountNonExpired(true)       // 明确设置账户未过期
+                .accountNonLocked(true)        // 明确设置账户未锁定
+                .credentialsNonExpired(true)   // 明确设置凭证未过期
+                .enabled(true)                 // 明确设置账户已启用
                 .build();
     }
 }

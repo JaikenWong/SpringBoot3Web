@@ -27,13 +27,13 @@ spring:
       host: localhost
       port: 6379
       password:
-      jedis:
+      lettuce:
         pool:
           enabled: true
           max-active: 8
-          max-wait: -1
           max-idle: 8
           min-idle: 0
+          max-wait: -1ms
 logging:
   level:
     com.jaiken.springweb: debug
@@ -44,3 +44,8 @@ mybatis-plus:
       id-type: auto
   mapper-locations: classpath:/mapper/**/*.xml
   type-aliases-package: com.jaiken.springweb.entity
+
+# JWT 配置
+jwt:
+  expiration: 3600  # Token 过期时间，单位秒（1小时）
+  secret: "0123456789"
