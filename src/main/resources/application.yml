@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: springweb
+  datasource:
+    url: jdbc:mysql://localhost:3306/testdb
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: root
+    hikari:
+        connection-timeout: 30000
+        idle-timeout: 600000
+        max-lifetime: 1800000
+        maximum-pool-size: 10
+        minimum-idle: 5
+        pool-name: MyHikariCP
+        connection-test-query: SELECT 1
+        validation-timeout: 5000
+        auto-commit: true
+        leak-detection-threshold: 60000
+  devtools:
+    restart:
+      enabled: true
+      additional-paths: src/main/java
+      exclude: static/**
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password:
+      jedis:
+        pool:
+          enabled: true
+          max-active: 8
+          max-wait: -1
+          max-idle: 8
+          min-idle: 0
+logging:
+  level:
+    com.jaiken.springweb: debug
+    root: info
+mybatis-plus:
+  global-config:
+    db-config:
+      id-type: auto
+  mapper-locations: classpath:/mapper/**/*.xml
+  type-aliases-package: com.jaiken.springweb.entity
